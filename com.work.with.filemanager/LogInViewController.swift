@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import RealmSwift
 
 let account = "myAccount"
 
@@ -14,6 +15,10 @@ class LogInViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        if authoriseUser() {
+            navigationController?.pushViewController(Tabbar(), animated: true)
+        }
 
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name: UIResponder.keyboardWillShowNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide), name: UIResponder.keyboardWillHideNotification, object: nil)
@@ -213,9 +218,43 @@ class LogInViewController: UIViewController {
                     return
                 }
                 if checkPassAndConfirm() {
+                    let user = User()
+                    user.login = account
+                    user.password = pass
+                    addUser(user: user)
                     navigationController?.pushViewController(Tabbar(), animated: true)
                 }
             }
+        }
+    }
+    
+    //REALM
+    func addUser(user: User) {
+        do {
+            guard let realm = try? Realm() else {
+                print("Ошибка инициализации Realm")
+                return
+            }
+            try realm.write {
+                realm.add(user)
+                print("Добавили пользователя в базу Realm")
+            }
+        } catch {
+            print(error.localizedDescription)
+        }
+    }
+    
+    func authoriseUser() -> Bool {
+        guard let realm = try? Realm() else {
+            print("Ошибка инициализации Realm")
+            return false
+        }
+        if realm.objects(User.self).count >= 1 {
+            print("Пользователь найден в базе Realm")
+            return true
+        } else {
+            print("Пользователь НЕ найден в базе Realm")
+            return false
         }
     }
     
